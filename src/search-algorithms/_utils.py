@@ -89,17 +89,3 @@ def heuristic_manhattan_distance(stone, switch):
         int: heuristic value
     """
     return sum(min(abs(sx - sw[0]) + abs(sy - sw[1]) for sw in switch) for sx, sy in stone)
-
-def heuristic_mahattan_distance_direction(ares_pos, stone, switch, stone_weights):
-    """Calculate Manhattan distance of Ares to stone and stone to switch to guess the best direction to move
-
-    Args:
-        ares_pos (tuple[int, int]): position of Ares
-        stones (list[tuple[int, int]]): list of positions of stones
-        switches (list[tuple[int, int]]): list of positions of switches
-        stone_weights (list[int]): list of stone weights
-
-    Returns:
-        int: heuristic value
-    """
-    return heuristic_weighted_manhattan_distance(stone, switch, stone_weights) + heuristic_manhattan_distance([ares_pos], stone)

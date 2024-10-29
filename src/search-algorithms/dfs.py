@@ -3,17 +3,7 @@ import os
 import time
 import tracemalloc
 
-def get_sort_directions(ares_pos, stones, switches, stone_weights):
-    sorted_directions = []
-    for move, (dx, dy) in _utils.DIRECTIONS.items():
-        new_x, new_y = ares_pos[0] + dx, ares_pos[1] + dy
-        min_distance = _utils.heuristic_mahattan_distance_direction((new_x, new_y), stones, switches, stone_weights)
-        sorted_directions.append((min_distance, move, (dx, dy)))
-    
-    sorted_directions.sort()
-    return [(move, (dx, dy)) for _, move, (dx, dy) in sorted_directions]
-
-def dfs(grid, ares_pos, stones, switches, stone_weights, sorted_directions):
+def dfs(grid, ares_pos, stones, switches, stone_weights):
     tracemalloc.start()
     start_time = time.time()
 
@@ -41,7 +31,7 @@ def dfs(grid, ares_pos, stones, switches, stone_weights, sorted_directions):
         
         visited.add((ares_x, ares_y, tuple(stones)))
 
-        for move, (dx, dy) in sorted_directions:
+        for move, (dx, dy) in _utils.DIRECTIONS.items():
             new_x, new_y = ares_x + dx, ares_y + dy
 
             if grid[new_x][new_y] == '#':
@@ -78,8 +68,7 @@ def main(input_file=input_file):
     
     stone_weights, grid = _utils.parse_input(input_string)
     ares_pos, stones, switches = _utils.find_positions(grid)
-    sorted_directions = get_sort_directions(ares_pos, stones, switches, stone_weights)
-    result = dfs(grid, ares_pos, stones, switches, stone_weights, sorted_directions)
+    result = dfs(grid, ares_pos, stones, switches, stone_weights)
 
     if result is not None:
         print(result)
