@@ -14,12 +14,12 @@ def a_star(grid, ares_position, stone_positions, stone_weights, switch_positions
     node_start = (ares_position, tuple(stone_positions))
     node_visited = 0
     g_score = {node_start: 0}
-    h_score = {node_start: heuristic_weighted_manhattan_distance(ares_position, stone_positions, switch_positions, stone_weights)}
-    f_score = {node_start: h_score[node_start]}
-    heapq.heappush(open_list, (f_score[node_start], node_start))
+    h_score = heuristic_weighted_manhattan_distance(ares_position, stone_positions, switch_positions, stone_weights)
+    f_score = {node_start: h_score}
+    heapq.heappush(open_list, (h_score, node_start))
     
     while open_list:
-        _, node_current = heapq.heappop(open_list)
+        f_current, node_current = heapq.heappop(open_list)
         ares, stones = node_current
         node_visited += 1
         
@@ -41,22 +41,6 @@ def a_star(grid, ares_position, stone_positions, stone_weights, switch_positions
         for move, new_ares, new_stones, move_cost in generate_neighbors(grid, ares, stones, stone_weights):
             node_successor = (new_ares, new_stones)
             successor_current_cost = g_score[node_current] + move_cost
-            
-            # if node_successor in [n[1] for n in open_list]:
-            #     if g_score[node_successor] <= successor_current_cost:
-            #         continue
-            # elif node_successor in closed_list:
-            #     if g_score[node_successor] <= successor_current_cost:
-            #         continue
-            #     closed_list.remove(node_successor)
-            #     heapq.heappush(open_list, (f_score[node_successor], node_successor))
-            # else:
-            #     h_score[node_successor] = heuristic_weighted_manhattan_distance(new_ares, new_stones, switch_positions, stone_weights)
-            #     f_score[node_successor] = h_score[node_successor] + successor_current_cost
-            #     heapq.heappush(open_list, (f_score[node_successor], node_successor))
-                
-            # g_score[node_successor] = successor_current_cost
-            # parent_map[node_successor] = (node_current, move)
             
             if node_successor in g_score and g_score[node_successor] <= successor_current_cost:
                 continue  # Skip if we've already found a cheaper path to this node
@@ -119,17 +103,6 @@ def reconstruct_path(parent_map, node):
 
 
 def heuristic_weighted_manhattan_distance(ares_pos, stones, switches, stone_weights):
-    """Calculate the heuristic value based on the Manhattan distance from Ares to each stone and from each stone to its closest switch.
-    
-    Args:
-        ares_pos (tuple[int, int]): Current position of Ares as (x, y).
-        stones (list[tuple[int, int]]): List of positions of stones.
-        switches (list[tuple[int, int]]): List of positions of switches.
-        stone_weights (list[int]): List of weights for each stone.
-    
-    Returns:
-        int: The total heuristic value, estimating the cost to reach the goal state.
-    """
     total_heuristic = 0
     
     for i, stone in enumerate(stones):
@@ -149,8 +122,6 @@ def heuristic_weighted_manhattan_distance(ares_pos, stones, switches, stone_weig
 
 
 def main():
-    
-    
     filename = '../../maps/sample-input.txt'
     with open(filename, 'r') as f:
         input_string = f.read()
