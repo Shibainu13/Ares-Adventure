@@ -1,18 +1,19 @@
-import _utils
+from . import _utils
 import os
 import time
 import tracemalloc
+from collections import deque
 
 def BFS(grid, ares_pos, stones, switches, stone_weights):
     tracemalloc.start()
     start_time = time.time()
 
-    queue = [(ares_pos, stones, '', 0)]
+    queue = deque([(ares_pos, stones, '', 0)])
     
     visited = set()
     nodes_generated = 0
     while queue:
-        (ares_x, ares_y), stones, path, total_cost = queue.pop(0)
+        (ares_x, ares_y), stones, path, total_cost = queue.popleft()
         nodes_generated += 1
 
         if _utils.all_stones_on_switches(stones, switches):
@@ -60,9 +61,11 @@ def BFS(grid, ares_pos, stones, switches, stone_weights):
 
     return None
 
-input_file = os.path.join('..', '..', 'maps', 'sample-input.txt')
 
-def main(input_file=input_file):
+
+def execute(fileName):
+    input_file = os.path.join( '..', 'maps', fileName)
+    print(input_file)
     with open(input_file, 'r') as file:
         input_string = file.read()
     
@@ -75,6 +78,4 @@ def main(input_file=input_file):
     else:
         print('BFS: No solution found')
 
-if __name__ == '__main__':
-    main()
 

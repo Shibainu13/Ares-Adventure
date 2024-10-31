@@ -89,3 +89,18 @@ def heuristic_manhattan_distance(stone, switch):
         int: heuristic value
     """
     return sum(min(abs(sx - sw[0]) + abs(sy - sw[1]) for sw in switch) for sx, sy in stone)
+
+import os
+def listMaps():
+    """List of all maps in the maps folder
+
+    Returns:
+        list[str]: list of all map names
+    """
+    list_Map=[]
+    list_Map.append('Map1')
+    list_Map.append('Map2')
+    list_Map.append('Map3')
+    list_Map.append('Map4')
+    list_Map.append('Map5')
+    return list_Map

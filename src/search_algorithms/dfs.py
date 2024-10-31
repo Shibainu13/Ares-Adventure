@@ -60,9 +60,10 @@ def dfs(grid, ares_pos, stones, switches, stone_weights):
 
     return None
 
-input_file = os.path.join('..', '..', 'maps', 'sample-input.txt')
+input_file = os.path.join('..', '..', 'maps', 'Map5.txt')
 
 def main(input_file=input_file):
+    print(input_file)
     with open(input_file, 'r') as file:
         input_string = file.read()
     
