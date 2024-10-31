@@ -3,65 +3,47 @@ import heapq
 import tracemalloc
 from _utils import all_stones_on_switches, parse_input, find_positions, DIRECTIONS
 
-def a_star(grid, ares_position, stone_positions, stone_weights, switch_positions):
+def a_star(grid, ares, stones, stone_weights, switches):
     start_time = time.time()
     tracemalloc.start()
     
-    open_list = []
-    closed_list = []
-    parent_map = {}
+    frontier = []
+    reached = {}
+    node_generated = 0
+
+    init_h = heuristic_weighted_manhattan_distance(ares, stones, switches, stone_weights)
+    heapq.heappush(frontier, (init_h, (0, ares, stones, '')))
     
-    node_start = (ares_position, tuple(stone_positions))
-    node_visited = 0
-    g_score = {node_start: 0}
-    h_score = heuristic_weighted_manhattan_distance(ares_position, stone_positions, switch_positions, stone_weights)
-    f_score = {node_start: h_score}
-    heapq.heappush(open_list, (h_score, node_start))
-    
-    while open_list:
-        f_current, node_current = heapq.heappop(open_list)
-        ares, stones = node_current
-        node_visited += 1
+    while frontier:
+        f_current, node_current = heapq.heappop(frontier)
+        g_current, ares, stones, path = node_current
+        node_generated += 1
         
-        if all_stones_on_switches(stones, switch_positions):
+        if all_stones_on_switches(stones, switches):
             end_time = time.time()
             _, peak_memory = tracemalloc.get_traced_memory()
             tracemalloc.stop()
-            path = reconstruct_path(parent_map, node_current)
             
             return {
                 'steps': len(path),
-                'weight': g_score[node_current],
-                'nodes:': node_visited,
+                'weight': g_current,
+                'nodes:': node_generated,
                 'time_ms': "{:.2f}".format(1000 * (end_time - start_time)),
                 'memory_mb': "{:.2f}".format(peak_memory / 1048576),
                 'path': path
             }
-        
-        for move, new_ares, new_stones, move_cost in generate_neighbors(grid, ares, stones, stone_weights):
-            node_successor = (new_ares, new_stones)
-            successor_current_cost = g_score[node_current] + move_cost
-            
-            if node_successor in g_score and g_score[node_successor] <= successor_current_cost:
-                continue  # Skip if we've already found a cheaper path to this node
-            
-            if node_successor not in closed_list:
-                if node_successor not in [n[1] for n in open_list]:
-                    # Heuristic for the successor to the goal
-                    h_successor = heuristic_weighted_manhattan_distance(new_ares, new_stones, switch_positions, stone_weights)
-                    f_score[node_successor] = successor_current_cost + h_successor
-                    heapq.heappush(open_list, (f_score[node_successor], node_successor))
-                
-                # Update scores and parent information
-                g_score[node_successor] = successor_current_cost
-                parent_map[node_successor] = (node_current, move)
-            elif g_score[node_successor] > successor_current_cost:
-                # If the node is in CLOSED with a higher cost, update and move it to OPEN
-                closed_list.remove(node_successor)
-                heapq.heappush(open_list, (f_score[node_successor], node_successor))
 
-        closed_list.append(node_current)
-    
+        neighbors = generate_neighbors(grid, ares, stones, stone_weights)
+        for move, new_ares, new_stones, move_cost in neighbors:
+            tentative_g = g_current + move_cost
+            new_state = (new_ares, new_stones)
+            
+            if new_state not in reached or tentative_g < reached[new_state][0]:
+                h_successor = heuristic_weighted_manhattan_distance(new_ares, new_stones, switches, stone_weights)
+                node_successor = (tentative_g, new_ares, new_stones, path + move)
+                reached[(new_ares, new_stones)] = node_successor
+                heapq.heappush(frontier, (tentative_g + h_successor, node_successor))
+                        
     return None
 
 
@@ -91,15 +73,7 @@ def generate_neighbors(grid, ares, stones, stone_weights):
             
         neighbors.append((move, (new_x, new_y), tuple(new_stones), move_cost))
         
-    return neighbors
-
-
-def reconstruct_path(parent_map, node):
-    path = []
-    while node in parent_map:
-        node, move = parent_map[node]
-        path.append(move)
-    return ''.join(path[::-1])   
+    return neighbors 
 
 
 def heuristic_weighted_manhattan_distance(ares_pos, stones, switches, stone_weights):
@@ -122,7 +96,7 @@ def heuristic_weighted_manhattan_distance(ares_pos, stones, switches, stone_weig
 
 
 def main():
-    filename = '../../maps/sample-input.txt'
+    filename = '../../maps/input3.txt'
     with open(filename, 'r') as f:
         input_string = f.read()
         
