@@ -1,3 +1,5 @@
+import os
+
 # Define directions via row-col (e.g moving up = moving to the row above --> (row - 1, col))
 DIRECTIONS = {
     'u': (-1, 0),
@@ -57,7 +59,6 @@ def all_stones_on_switches(stones: list[tuple[int, int]], switches: list[tuple[i
     """
     return all(stone in switches for stone in stones)
 
-
 def heuristic_weighted_manhattan_distance(stones: list[tuple[int, int]], switches: list[tuple[int, int]], stone_weights: list[int]):
     """Calculate weighted Manhattan distance of stones to switches and the weight of the stones to estimate the remaining effort needed to complete the task of placing all stones on their designated switches
 
@@ -90,7 +91,6 @@ def heuristic_manhattan_distance(stone, switch):
     """
     return sum(min(abs(sx - sw[0]) + abs(sy - sw[1]) for sw in switch) for sx, sy in stone)
 
-import os
 def listMaps():
     """List of all maps in the maps folder
 
