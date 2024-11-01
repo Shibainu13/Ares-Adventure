@@ -15,7 +15,7 @@ def a_star(grid, ares, stones, stone_weights, switches):
     heapq.heappush(frontier, (init_h, (0, ares, stones, '')))
     
     while frontier:
-        f_current, node_current = heapq.heappop(frontier)
+        _, node_current = heapq.heappop(frontier)
         g_current, ares, stones, path = node_current
         node_generated += 1
         
