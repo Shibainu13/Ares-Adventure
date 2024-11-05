@@ -142,6 +142,10 @@ class SokobanVisualizer(QWidget):
         algorithm = self.algorithm_dropdown.currentText()
         result = self.run_algorithm(algorithm)
         
+        if result is None:
+            QMessageBox.information(self, 'Error', 'No solution found.')
+            return
+        
         self.steps = 0
         self.total_weight = result['weight']
         self.path = result['path']
