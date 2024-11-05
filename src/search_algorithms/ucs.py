@@ -1,4 +1,4 @@
-import _utils
+from . import _utils
 import os
 import tracemalloc
 import time
@@ -72,7 +72,7 @@ def ucs(grid, ares_pos, stones, switches, stone_weights):
 
 input_file = os.path.join('..', '..', 'maps', 'sample-input.txt')
 
-def run(input_file=input_file):
+def main(input_file=input_file):
     with open(input_file, 'r') as file:
         input_string = file.read()
     
@@ -84,4 +84,5 @@ def run(input_file=input_file):
     else:
         print('No solution found')
 
-run()
+if __name__ == '__main__':
+    main()

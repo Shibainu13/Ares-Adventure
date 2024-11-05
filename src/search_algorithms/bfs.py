@@ -1,4 +1,4 @@
-import _utils
+from . import _utils
 import os
 import time
 import tracemalloc

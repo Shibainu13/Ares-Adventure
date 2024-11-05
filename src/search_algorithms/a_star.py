@@ -1,7 +1,7 @@
 import time
 import heapq
 import tracemalloc
-from _utils import all_stones_on_switches, parse_input, find_positions, DIRECTIONS
+from . import _utils
 
 def a_star(grid, ares, stones, stone_weights, switches):
     start_time = time.time()
@@ -19,7 +19,7 @@ def a_star(grid, ares, stones, stone_weights, switches):
         g_current, ares, stones, path = node_current
         node_generated += 1
         
-        if all_stones_on_switches(stones, switches):
+        if _utils.all_stones_on_switches(stones, switches):
             end_time = time.time()
             _, peak_memory = tracemalloc.get_traced_memory()
             tracemalloc.stop()
@@ -51,7 +51,7 @@ def generate_neighbors(grid, ares, stones, stone_weights):
     neighbors = []
     ares_x, ares_y = ares
     
-    for move, (dx, dy) in DIRECTIONS.items():
+    for move, (dx, dy) in _utils.DIRECTIONS.items():
         new_x, new_y = ares_x + dx, ares_y + dy
         
         if grid[new_x][new_y] == '#':
@@ -100,8 +100,8 @@ def main():
     with open(filename, 'r') as f:
         input_string = f.read()
         
-    stone_weights, grid = parse_input(input_string)
-    ares_position, stone_positions, switch_positions = find_positions(grid)
+    stone_weights, grid = _utils.parse_input(input_string)
+    ares_position, stone_positions, switch_positions = _utils.find_positions(grid)
     
     result = a_star(grid, ares_position, stone_positions, stone_weights, switch_positions)
     

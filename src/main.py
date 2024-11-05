@@ -1,13 +1,14 @@
 
 import sys
+import time
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QComboBox, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 import search_algorithms._utils as _utils
-import search_algorithms.dfs as DFS
 import search_algorithms.bfs as BFS
+import search_algorithms.dfs as DFS
 import search_algorithms.ucs as UCS
 import search_algorithms.a_star as ASTAR
 
@@ -75,18 +76,26 @@ class SokobanVisualizer(QWidget):
         # Set Main Layout
         self.setLayout(main_layout)
         
+        # Timer for visualization
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.next_step)
+        
         # Load Initial Map
         self.load_map()
     
     def load_map(self):
+        # Reset status texts
+        self.steps_label.setText('Steps: 0')
+        self.cost_label.setText('Total Cost: 0')
+        
         # Get the selected map file
         map_file = self.maps[self.map_dropdown.currentIndex()]
         
         # Read and parse the map file
         with open(map_file, 'r') as f:
             input_data = f.read()
-        stone_weights, grid = _utils.parse_input(input_data)
-        ares_pos, stones, switches = _utils.find_positions(grid)
+        self.stone_weights, self.grid = _utils.parse_input(input_data)
+        self.ares_pos, self.stones, self.switches = _utils.find_positions(self.grid)
         
         # Clear the grid layout
         for i in reversed(range(self.grid_layout.count())):
@@ -95,8 +104,8 @@ class SokobanVisualizer(QWidget):
                 widget_to_remove.setParent(None)
         
         # Setup map dimensions
-        map_height = len(grid)
-        map_width = max(len(row) for row in grid)
+        map_height = len(self.grid)
+        map_width = max(len(row) for row in self.grid)
         
         # Load textures based on cell type
         for row in range(map_height):
@@ -104,8 +113,8 @@ class SokobanVisualizer(QWidget):
                 cell = QLabel()
                 cell.setFixedSize(40, 40)
                 
-                if col < len(grid[row]):  # Check to avoid index error for uneven rows
-                    cell_type = grid[row][col]
+                if col < len(self.grid[row]):  # Check to avoid index error for uneven rows
+                    cell_type = self.grid[row][col]
                     if cell_type == '#':
                         cell.setStyleSheet("background-color: gray; border: 1px solid black;")  # Wall
                     elif cell_type == '.':
@@ -130,10 +139,104 @@ class SokobanVisualizer(QWidget):
         self.setFixedSize(map_width * 40 + 100, map_height * 40 + 150)
     
     def start_visualization(self):
-        # Placeholder logic for starting the visualization
-        QMessageBox.information(self, 'Start', 'Starting visualization...')
-        # Implement the algorithm visualization logic here
-        # Update steps_label and cost_label as the algorithm proceeds
+        algorithm = self.algorithm_dropdown.currentText()
+        result = self.run_algorithm(algorithm)
+        
+        self.steps = 0
+        self.total_weight = result['weight']
+        self.path = result['path']
+        
+        self.steps_label.setText(f"Steps: {self.steps}")
+        self.cost_label.setText(f"Total Cost: {self.total_weight}")
+        
+        self.path_index = 0
+        self.timer.start(150)
+        
+    def run_algorithm(self, algorithm):
+        if algorithm == 'BFS':
+            return BFS.bfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'DFS':
+            return DFS.dfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'UCS':
+            return UCS.ucs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'A*':
+            return ASTAR.a_star(self.grid, self.ares_pos, self.stones, self.stone_weights, self.switches)
+        return None
+        
+    def next_step(self):
+        if self.path_index >= len(self.path):
+            self.timer.stop()  # Stop the timer when path is complete
+            return
+
+        move = self.path[self.path_index]
+        self.execute_move(move)
+        self.path_index += 1
+        self.steps += 1
+        
+        # Update the stats after each step
+        self.steps_label.setText(f'Steps: {self.steps}')
+        self.cost_label.setText(f'Total Cost: {self.total_weight}')
+        
+    def execute_move(self, move):
+        # Define movement deltas
+        deltas = {
+            'u': (-1, 0), 'U': (-1, 0),  # Up
+            'd': (1, 0), 'D': (1, 0),    # Down
+            'l': (0, -1), 'L': (0, -1),  # Left
+            'r': (0, 1), 'R': (0, 1)     # Right
+        }
+        
+        # Get the current position of the player (Ares)
+        current_row, current_col = self.ares_pos
+        delta_row, delta_col = deltas[move]
+        
+        # Calculate new player position
+        new_row = current_row + delta_row
+        new_col = current_col + delta_col
+        
+        # Check if it's a stone-pushing move (uppercase letter)
+        if move.isupper():
+            # Calculate stone's new position
+            stone_row = new_row + delta_row
+            stone_col = new_col + delta_col
+            
+            # Move the stone to the new position
+            self.grid[stone_row][stone_col] = '$' if self.grid[stone_row][stone_col] == '.' else '*'
+            self.grid[new_row][new_col] = '@' if self.grid[new_row][new_col] == '.' else '+'
+            
+            # Update UI for the stone's new position
+            self.update_cell(stone_row, stone_col, stone=True)
+        
+        # Move the player to the new position
+        self.grid[new_row][new_col] = '@' if self.grid[new_row][new_col] == '.' else '+'
+        self.grid[current_row][current_col] = '.' if (current_row, current_col) in self.switches else ' '
+
+        # Update UI for player's new position
+        self.update_cell(new_row, new_col, player=True)
+        self.update_cell(current_row, current_col)
+
+        # Update player's position for the next move
+        self.ares_pos = (new_row, new_col)
+
+    def update_cell(self, row, col, player=False, stone=False):
+        """Updates the cell at (row, col) with the appropriate color and style."""
+        cell = self.grid_layout.itemAtPosition(row, col).widget()
+        
+        # Determine the cell's style based on its contents
+        if self.grid[row][col] == '#':
+            cell.setStyleSheet("background-color: gray; border: 1px solid black;")  # Wall
+        elif self.grid[row][col] == '.':
+            cell.setStyleSheet("background-color: lightgreen; border: 1px solid black;")  # Switch
+        elif player:
+            cell.setStyleSheet("background-color: lightblue; border: 1px solid black;")  # Player
+        elif stone:
+            if self.grid[row][col] == '*':
+                cell.setStyleSheet("background-color: orange; border: 1px solid black;")  # Stone on Switch
+            else:
+                cell.setStyleSheet("background-color: yellow; border: 1px solid black;")  # Stone
+        else:
+            cell.setStyleSheet("background-color: white; border: 1px solid black;")  # Blank cell
+
     
     def reset_map(self):
         # Reset the visualization (clear the steps, cost, and reset map)
