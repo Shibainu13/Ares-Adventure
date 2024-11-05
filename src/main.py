@@ -84,6 +84,9 @@ class SokobanVisualizer(QWidget):
         self.load_map()
     
     def load_map(self):
+        # Stop any ongoing visualization if running
+        if self.timer.isActive():
+            self.timer.stop()
         # Reset status texts
         self.steps_label.setText('Steps: 0')
         self.cost_label.setText('Total Cost: 0')
@@ -243,6 +246,9 @@ class SokobanVisualizer(QWidget):
 
     
     def reset_map(self):
+        # Stop any ongoing visualization if running
+        if self.timer.isActive():
+            self.timer.stop()
         # Reset the visualization (clear the steps, cost, and reset map)
         self.steps_label.setText('Steps: 0')
         self.cost_label.setText('Total Cost: 0')
