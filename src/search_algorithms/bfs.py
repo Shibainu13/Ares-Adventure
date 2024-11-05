@@ -3,7 +3,7 @@ import os
 import time
 import tracemalloc
 
-def BFS(grid, ares_pos, stones, switches, stone_weights):
+def bfs(grid, ares_pos, stones, switches, stone_weights):
     tracemalloc.start()
     start_time = time.time()
 
@@ -68,7 +68,7 @@ def main(input_file=input_file):
     
     stone_weights, grid = _utils.parse_input(input_string)
     ares_pos, stones, switches = _utils.find_positions(grid)
-    result = BFS(grid, ares_pos, stones, switches, stone_weights)
+    result = bfs(grid, ares_pos, stones, switches, stone_weights)
 
     if result is not None:
         print(result)
