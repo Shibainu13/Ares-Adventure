@@ -133,7 +133,7 @@ class SokobanVisualizer(QWidget):
                     else:
                         cell.setStyleSheet("background-color: white; border: 1px solid black;")  # Blank cell
                 else:
-                    cell.setStyleSheet("background-color: gray; border: 1px solid black;")   # Fill extra cells as wall
+                    cell.setStyleSheet("background-color: white; border: 1px solid black;")   # Fill extra cells as blank
                 
                 # Add cell to grid layout
                 self.grid_layout.addWidget(cell, row, col)
