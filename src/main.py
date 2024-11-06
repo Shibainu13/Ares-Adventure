@@ -48,6 +48,8 @@ class SokobanVisualizer(QWidget):
         self.cost_label = QLabel('Total Cost: 0')
         top_layout.addWidget(self.steps_label)
         top_layout.addWidget(self.cost_label)
+        self.steps_label.setFixedWidth(80)  # Increase width for steps label
+        self.cost_label.setFixedWidth(100)  # Increase width for cost label
         
         # Add top layout to main layout
         main_layout.addLayout(top_layout)
@@ -87,6 +89,7 @@ class SokobanVisualizer(QWidget):
         # Stop any ongoing visualization if running
         if self.timer.isActive():
             self.timer.stop()
+            
         # Reset status texts
         self.steps_label.setText('Steps: 0')
         self.cost_label.setText('Total Cost: 0')
@@ -142,6 +145,8 @@ class SokobanVisualizer(QWidget):
         self.setFixedSize(map_width * 40 + 100, map_height * 40 + 150)
     
     def start_visualization(self):
+        self.reset_map()
+        
         algorithm = self.algorithm_dropdown.currentText()
         result = self.run_algorithm(algorithm)
         
@@ -252,8 +257,11 @@ class SokobanVisualizer(QWidget):
         # Reset the visualization (clear the steps, cost, and reset map)
         self.steps_label.setText('Steps: 0')
         self.cost_label.setText('Total Cost: 0')
+        self.path_index = 0
+        self.steps = 0
+        self.total_weight = 0
         self.load_map()
-        QMessageBox.information(self, 'Reset', 'Map has been reset.')
+        # QMessageBox.information(self, 'Reset', 'Map has been reset.')
 
 # Run the application
 if __name__ == '__main__':

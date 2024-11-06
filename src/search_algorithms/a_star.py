@@ -1,8 +1,8 @@
 import time
 import heapq
 import tracemalloc
-# from . import _utils
-import _utils
+from . import _utils
+# import _utils
 
 def a_star(grid, ares, stones, stone_weights, switches):
     start_time = time.time()
