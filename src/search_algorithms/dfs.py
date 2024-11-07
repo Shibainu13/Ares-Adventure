@@ -60,21 +60,3 @@ def dfs(grid, ares_pos, stones, switches, stone_weights):
                 nodes_generated += 1
     
     return None
-
-input_file = os.path.join('..', '..', 'maps', 'input1.txt')
-
-def main(input_file=input_file):
-    with open(input_file, 'r') as file:
-        input_string = file.read()
-    
-    stone_weights, grid = _utils.parse_input(input_string)
-    ares_pos, stones, switches = _utils.find_positions(grid)
-    result = dfs(grid, ares_pos, stones, switches, stone_weights)
-
-    if result is not None:
-        print(result)
-    else:
-        print('DFS: No solution found')
-
-if __name__ == '__main__':
-    main()

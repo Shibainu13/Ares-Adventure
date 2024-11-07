@@ -113,22 +113,3 @@ def corner_deadlock(grid, stone, stones, switches):
     
     return (up_block or down_block) and (left_block or right_block) and not on_switch
 
-
-def main():
-    filename = '../../maps/input1.txt'
-    with open(filename, 'r') as f:
-        input_string = f.read()
-        
-    stone_weights, grid = _utils.parse_input(input_string)
-    ares_position, stone_positions, switch_positions = _utils.find_positions(grid)
-    
-    result = a_star(grid, ares_position, stone_positions, stone_weights, switch_positions)
-    
-    if result:
-        print(result)
-    else:
-        print('No solution found!')
-        
-
-if __name__ == '__main__':
-    main()
