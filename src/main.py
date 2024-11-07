@@ -59,7 +59,9 @@ class SokobanVisualizer(QWidget):
         # Grid Layout for Map
         self.grid_layout = QGridLayout()
         self.grid_layout.setSpacing(1)
-        main_layout.addLayout(self.grid_layout)
+        self.map_container = QWidget()
+        self.map_container.setLayout(self.grid_layout)
+        main_layout.addWidget(self.map_container, alignment=Qt.AlignCenter)
         
         # Bottom Controls Layout
         bottom_layout = QHBoxLayout()
@@ -68,7 +70,7 @@ class SokobanVisualizer(QWidget):
         self.start_button = QPushButton('Start')
         self.start_button.clicked.connect(self.start_visualization)
         bottom_layout.addWidget(self.start_button)
-        
+            
         # Reset Button
         self.reset_button = QPushButton('Reset')
         self.reset_button.clicked.connect(self.reset_map)
@@ -162,11 +164,9 @@ class SokobanVisualizer(QWidget):
                 self.grid_layout.addWidget(cell, row, col)
         
         # Adjust window size based on map size
-        self.setFixedSize(map_width * 40 + 100, map_height * 40 + 150)
+        self.setFixedSize(max(map_width * 40 + 100, 600), map_height * 40 + 150)
     
-    def start_visualization(self):
-        self.reset_map()
-        
+    def start_visualization(self):        
         algorithm = self.algorithm_dropdown.currentText()
         result = self.run_algorithm(algorithm)
         
