@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QComboBox, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
 )
-from PyQt5.QtGui import (QIcon, QPixmap, QPainter)
+from PyQt5.QtGui import (QIcon, QPixmap, QPainter, QColor)
 from PyQt5.QtCore import Qt, QTimer
 import search_algorithms._utils as _utils
 import search_algorithms.bfs as BFS
@@ -94,6 +94,7 @@ class SokobanVisualizer(QWidget):
     
     def load_assets(self):
         self.assets = {}
+
         player_assets = QPixmap(40, 40)
         player_assets.fill(Qt.transparent)
         painter = QPainter(player_assets)
@@ -101,11 +102,24 @@ class SokobanVisualizer(QWidget):
         painter.drawPixmap(0, 0, QPixmap('../asset/ares.png').scaled(40, 40, Qt.KeepAspectRatio))
         painter.end()
         self.assets['player'] = player_assets
+
         self.assets['invalid_cell'] = QPixmap('../asset/blank.png').scaled(40, 40, Qt.KeepAspectRatio)
         self.assets['wall'] = QPixmap('../asset/brick.png').scaled(40, 40, Qt.KeepAspectRatio)
         self.assets['blank'] = QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio)
         self.assets['switch'] = QPixmap('../asset/switch.png').scaled(40, 40, Qt.KeepAspectRatio)
-        self.assets['stone'] = QPixmap('../asset/stone.png').scaled(40, 40, Qt.KeepAspectRatio)
+
+        original_stone = QPixmap('../asset/stone.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['stone'] = original_stone
+
+        stone_on_switch = QPixmap(40, 40)
+        stone_on_switch.fill(Qt.transparent)
+        painter = QPainter(stone_on_switch)
+        painter.drawPixmap(0, 0, original_stone)
+        tint_color = QColor(255, 255, 0)
+        tint_color.setAlpha(100)
+        painter.fillRect(stone_on_switch.rect(), tint_color)
+        painter.end()
+        self.assets['stone_on_switch'] = stone_on_switch
 
     def load_map(self):
         # Stop any ongoing visualization if running
@@ -146,17 +160,17 @@ class SokobanVisualizer(QWidget):
                     if cell_type == '#':
                         cell.setPixmap(self.assets['wall'])  # Wall
                     elif cell_type == '.':
-                        cell.setPixmap(self.assets['switch'])
+                        cell.setPixmap(self.assets['switch']) # Switch
                     elif cell_type == '@':
-                        cell.setPixmap(self.assets['player'])
+                        cell.setPixmap(self.assets['player']) # Player
                     elif cell_type == '+':
-                        cell.setPixmap(self.assets['player'])
+                        cell.setPixmap(self.assets['player']) # Player on switch
                     elif cell_type == '$':
-                        cell.setPixmap(self.assets['stone'])
+                        cell.setPixmap(self.assets['stone']) # Stone
                     elif cell_type == '*':
-                        cell.setPixmap(self.assets['stone'])
+                        cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
                     else:
-                        cell.setPixmap(self.assets['blank'])
+                        cell.setPixmap(self.assets['blank']) # Empty cell
                 else:
                     cell.setPixmap(self.assets['invalid_cell'])
                 
@@ -234,8 +248,8 @@ class SokobanVisualizer(QWidget):
             stone_col = new_col + delta_col
             
             # Move the stone to the new position
-            self.grid[stone_row][stone_col] = '$' if self.grid[stone_row][stone_col] == '.' else '*'
-            self.grid[new_row][new_col] = '@' if self.grid[new_row][new_col] == '.' else '+'
+            self.grid[stone_row][stone_col] = '*' if self.grid[stone_row][stone_col] == '.' else '$'
+            self.grid[new_row][new_col] = '+' if self.grid[new_row][new_col] == '.' else '@'
             
             # Update UI for the stone's new position
             self.update_cell(stone_row, stone_col, stone=True)
@@ -259,16 +273,16 @@ class SokobanVisualizer(QWidget):
         if self.grid[row][col] == '#':
             cell.setPixmap(self.assets['wall'])  # Wall
         elif self.grid[row][col] == '.':
-            cell.setPixmap(self.assets['switch'])
+            cell.setPixmap(self.assets['switch']) # Switch
         elif player:
-            cell.setPixmap(self.assets['player'])
+            cell.setPixmap(self.assets['player']) # Player
         elif stone:
             if self.grid[row][col] == '*':
-                cell.setPixmap(self.assets['stone'])
+                cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
             else:
-                cell.setPixmap(self.assets['stone'])
+                cell.setPixmap(self.assets['stone']) # Stone
         else:
-            cell.setPixmap(self.assets['blank'])
+            cell.setPixmap(self.assets['blank']) # Empty cell
  
     def reset_map(self):
         # Stop any ongoing visualization if running
