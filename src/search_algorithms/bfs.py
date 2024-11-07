@@ -14,7 +14,6 @@ def bfs(grid, ares_pos, stones, switches, stone_weights):
     nodes_generated = 0
     while queue:
         (ares_x, ares_y), stones, path, total_cost = queue.pop(0)
-        nodes_generated += 1
 
         if _utils.all_stones_on_switches(stones, switches):
             end_time = time.time()

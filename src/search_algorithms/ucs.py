@@ -10,7 +10,9 @@ def ucs(grid, ares_pos, stones, switches, stone_weights):
 
     priority_queue = [(0, ares_pos, stones, '')]
 
-    visited = {}
+    visited = dict()
+    visited[(ares_pos[0], ares_pos[1], tuple(stones))] = 0
+    node_generated = 0
 
     while priority_queue:
         total_cost, (ares_x, ares_y), stones, path = heapq.heappop(priority_queue)
@@ -23,15 +25,11 @@ def ucs(grid, ares_pos, stones, switches, stone_weights):
             return {
                 'steps': len(path),
                 'weight': total_cost,
+                'nodes': node_generated,
                 'time_ms': "{:.2f}".format(1000 * (end_time - start_time)),
                 'memory_mb': "{:.2f}".format(peak_memory / 1048576),
-                'path': path,
+                'path': path
             }
-
-        if (ares_x, ares_y, tuple(stones)) in visited:
-            continue
-
-        visited[(ares_x, ares_y, tuple(stones))] = total_cost
 
         for move, (dx, dy) in _utils.DIRECTIONS.items():
             new_x, new_y = ares_x + dx, ares_y + dy
@@ -55,20 +53,14 @@ def ucs(grid, ares_pos, stones, switches, stone_weights):
                 move = move.upper()
 
             new_total_cost = total_cost + move_cost
+            new_state = (new_x, new_y, tuple(new_stones))
 
-            heapq.heappush(priority_queue, (new_total_cost, (new_x, new_y), new_stones, path + move))
-    end_time = time.time()
-    _, peak_memory = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
+            if new_state not in visited or new_total_cost < visited[new_state]:
+                visited[new_state] = new_total_cost
+                heapq.heappush(priority_queue, (new_total_cost, (new_x, new_y), new_stones, path + move))
+                node_generated += 1
 
-    return {
-        'steps': None,
-        'weight': None,
-        'time_ms': "{:.2f}".format(1000 * (end_time - start_time)),
-        'memory_mb': "{:.2f}".format(peak_memory / 1048576),
-        'path': None,
-    }
-
+    return None
 
 input_file = os.path.join('..', '..', 'maps', 'sample-input.txt')
 
