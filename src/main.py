@@ -19,6 +19,7 @@ class SokobanVisualizer(QWidget):
         
         # Initialize UI Components
         self.maps = [f'../maps/input{i}.txt' for i in range(1, 11)]
+        self.is_running = False
         self.initUI()
     
     def initUI(self):
@@ -181,6 +182,16 @@ class SokobanVisualizer(QWidget):
         self.setFixedSize(max(map_width * 40 + 100, 600), map_height * 40 + 150)
     
     def start_visualization(self):        
+        # Act as a pause button if is_running
+        if self.is_running and self.timer.isActive():
+            self.timer.stop()
+            self.start_button.setText('Continue')
+            return
+        elif self.is_running and not self.timer.isActive():
+            self.timer.start(150)
+            self.start_button.setText('Pause')
+            return
+        
         self.reset_map()
         algorithm = self.algorithm_dropdown.currentText()
         result = self.run_algorithm(algorithm)
@@ -198,6 +209,8 @@ class SokobanVisualizer(QWidget):
         
         self.path_index = 0
         self.timer.start(150)
+        self.start_button.setText('Pause')
+        self.is_running = True
         
     def run_algorithm(self, algorithm):
         if algorithm == 'BFS':
@@ -213,6 +226,8 @@ class SokobanVisualizer(QWidget):
     def next_step(self):
         if self.path_index >= len(self.path):
             self.timer.stop()  # Stop the timer when path is complete
+            self.start_button.setText('Start')
+            self.is_running = False
             return
 
         move = self.path[self.path_index]
@@ -289,6 +304,8 @@ class SokobanVisualizer(QWidget):
         if self.timer.isActive():
             self.timer.stop()
         # Reset the visualization (clear the steps, cost, and reset map)
+        self.is_running = False
+        self.start_button.setText('Start')
         self.steps_label.setText('Steps: 0')
         self.cost_label.setText('Total Cost: 0')
         self.path_index = 0
