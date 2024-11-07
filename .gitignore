@@ -64,3 +64,6 @@ env/
 ENV/
 env.bak/
 venv.bak/
+
+# Ignore save files
+output/output*.txt
