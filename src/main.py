@@ -5,13 +5,41 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QComboBox, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
 )
-from PyQt5.QtGui import (QIcon, QPixmap, QPainter, QColor)
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import (QIcon, QPixmap, QPainter, QColor, QMovie)
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
 import search_algorithms._utils as _utils
 import search_algorithms.bfs as BFS
 import search_algorithms.dfs as DFS
 import search_algorithms.ucs as UCS
 import search_algorithms.a_star as ASTAR
+
+class AlgorithmThread(QThread):
+    finished = pyqtSignal(object)
+
+    def __init__(self, algorithm, grid, ares_pos, stones, switches, stone_weights):
+        super().__init__()
+        self.algorithm = algorithm
+        self.grid = grid
+        self.ares_pos = ares_pos
+        self.stones = stones
+        self.switches = switches
+        self.stone_weights = stone_weights
+
+    def run(self):
+        QThread.sleep(1)
+        result = self.run_algorithm(self.algorithm)
+        self.finished.emit((result, self.algorithm))
+
+    def run_algorithm(self, algorithm):
+        if algorithm == 'BFS':
+            return BFS.bfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'DFS':
+            return DFS.dfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'UCS':
+            return UCS.ucs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'A*':
+            return ASTAR.a_star(self.grid, self.ares_pos, self.stones, self.stone_weights, self.switches)
+        return None
 
 class SokobanVisualizer(QWidget):
     def __init__(self):
@@ -49,8 +77,15 @@ class SokobanVisualizer(QWidget):
         # Info Display (Steps & Cost)
         self.steps_label = QLabel('Steps: 0')
         self.cost_label = QLabel('Total Cost: 0')
+
+        self.loading_label = QLabel()
+        self.loading_movie = QMovie('../asset/loading.gif')
+        self.loading_label.setMovie(self.loading_movie)
+        self.loading_movie.setScaledSize(QSize(20, 20))
         top_layout.addWidget(self.steps_label)
         top_layout.addWidget(self.cost_label)
+        top_layout.addWidget(self.loading_label)
+        self.loading_label.hide()
         self.steps_label.setFixedWidth(80)  # Increase width for steps label
         self.cost_label.setFixedWidth(100)  # Increase width for cost label
         
@@ -181,7 +216,9 @@ class SokobanVisualizer(QWidget):
         # Adjust window size based on map size
         self.setFixedSize(max(map_width * 40 + 100, 600), map_height * 40 + 150)
     
-    def start_visualization(self):        
+    def start_visualization(self):
+        self.loading_label.show()
+        self.loading_movie.start()
         # Act as a pause button if is_running
         if self.is_running and self.timer.isActive():
             self.timer.stop()
@@ -194,8 +231,38 @@ class SokobanVisualizer(QWidget):
         
         self.reset_map()
         algorithm = self.algorithm_dropdown.currentText()
-        result = self.run_algorithm(algorithm)
+        # result = self.run_algorithm(algorithm)
+        self.thread = AlgorithmThread(algorithm, self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        self.thread.finished.connect(self.on_algorithm_finished)
+        self.thread.start()
         
+        # if result is None:
+        #     QMessageBox.information(self, 'Error', 'No solution found.')
+        #     return
+        
+        # save_file = f'../output/output{self.map_dropdown.currentIndex() + 1}.txt'
+        # with open(save_file, 'a+') as file:
+        #     self.save_result_to_file(file, result, algorithm)
+        #     file.close()
+
+        # self.steps = 0
+        # self.total_weight = result['weight_track']
+        # self.path = result['path']
+        
+        # self.steps_label.setText(f"Steps: {self.steps}")
+        # self.cost_label.setText(f"Total Cost: 0")
+        
+        # self.path_index = 0
+        # self.timer.start(150)
+        # self.start_button.setText('Pause')
+        # self.is_running = True
+
+    def on_algorithm_finished(self, result):
+        self.loading_label.hide()
+        self.loading_movie.stop()
+
+        result, algorithm = result
+
         if result is None:
             QMessageBox.information(self, 'Error', 'No solution found.')
             return
@@ -216,17 +283,6 @@ class SokobanVisualizer(QWidget):
         self.timer.start(150)
         self.start_button.setText('Pause')
         self.is_running = True
-        
-    def run_algorithm(self, algorithm):
-        if algorithm == 'BFS':
-            return BFS.bfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
-        elif algorithm == 'DFS':
-            return DFS.dfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
-        elif algorithm == 'UCS':
-            return UCS.ucs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
-        elif algorithm == 'A*':
-            return ASTAR.a_star(self.grid, self.ares_pos, self.stones, self.stone_weights, self.switches)
-        return None
         
     def next_step(self):
         if self.path_index >= len(self.path):
