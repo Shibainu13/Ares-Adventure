@@ -28,7 +28,7 @@ def a_star(grid, ares, stones, stone_weights, switches):
             return {
                 'steps': len(path),
                 'weight': total_cost,
-                'nodes:': node_generated,
+                'nodes': node_generated,
                 'time_ms': "{:.2f}".format(1000 * (end_time - start_time)),
                 'memory_mb': "{:.2f}".format(peak_memory / 1048576),
                 'path': path,

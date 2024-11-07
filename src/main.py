@@ -200,6 +200,11 @@ class SokobanVisualizer(QWidget):
             QMessageBox.information(self, 'Error', 'No solution found.')
             return
         
+        save_file = f'../output/output{self.map_dropdown.currentIndex() + 1}.txt'
+        with open(save_file, 'a+') as file:
+            self.save_result_to_file(file, result, algorithm)
+            file.close()
+
         self.steps = 0
         self.total_weight = result['weight_track']
         self.path = result['path']
@@ -313,6 +318,21 @@ class SokobanVisualizer(QWidget):
         self.total_weight = 0
         self.load_map()
         # QMessageBox.information(self, 'Reset', 'Map has been reset.')
+
+    def save_result_to_file(self, file, result, algorithm):
+        file.seek(0)
+        if any(algorithm in line for line in file):
+            return
+        output = (
+            f"{algorithm}\n"
+            f"Steps: {result['steps']}, "
+            f"Weight: {result['weight']}, "
+            f"Node: {result['nodes']}, "
+            f"Time (ms): {result['time_ms']}, "
+            f"Memory (MB): {result['memory_mb']}\n"
+            f"{result['path']}\n"
+        )
+        file.write(output)
 
 # Run the application
 if __name__ == '__main__':
