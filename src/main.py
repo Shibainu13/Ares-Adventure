@@ -170,6 +170,7 @@ class SokobanVisualizer(QWidget):
         # Stop any ongoing visualization if running
         if self.timer.isActive():
             self.timer.stop()
+            self.reset_map()
             
         # Reset status texts
         self.steps_label.setText('Steps: 0')
