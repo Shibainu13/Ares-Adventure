@@ -13,11 +13,11 @@ def a_star(grid, ares, stones, stone_weights, switches):
     node_generated = 0
 
     init_h = heuristic_weighted_manhattan_distance(ares, stones, switches, stone_weights)
-    heapq.heappush(frontier, (init_h, (0, ares, stones, '', 0))) # f, ares, stones, path, total cost
+    heapq.heappush(frontier, (init_h, (0, ares, stones, '', 0, []))) # f, ares, stones, path, total cost, weight track
     
     while frontier:
         _, node_current = heapq.heappop(frontier)
-        g_current, ares, stones, path, total_cost = node_current
+        g_current, ares, stones, path, total_cost, weight_track = node_current
         node_generated += 1
         
         if _utils.all_stones_on_switches(stones, switches):
@@ -31,7 +31,8 @@ def a_star(grid, ares, stones, stone_weights, switches):
                 'nodes:': node_generated,
                 'time_ms': "{:.2f}".format(1000 * (end_time - start_time)),
                 'memory_mb': "{:.2f}".format(peak_memory / 1048576),
-                'path': path
+                'path': path,
+                'weight_track': weight_track
             }
 
         neighbors = generate_neighbors(grid, ares, stones, stone_weights, switches)
@@ -41,7 +42,7 @@ def a_star(grid, ares, stones, stone_weights, switches):
             
             if new_state not in reached or tentative_g < reached[new_state][0]:
                 h_successor = heuristic_weighted_manhattan_distance(new_ares, new_stones, switches, stone_weights)
-                node_successor = (tentative_g, new_ares, new_stones, path + move, total_cost + cost)
+                node_successor = (tentative_g, new_ares, new_stones, path + move, total_cost + cost, weight_track + [total_cost + cost])
                 reached[(new_ares, new_stones)] = node_successor
                 heapq.heappush(frontier, (tentative_g + h_successor, node_successor))
                         
@@ -114,7 +115,7 @@ def corner_deadlock(grid, stone, stones, switches):
 
 
 def main():
-    filename = '../../maps/input10.txt'
+    filename = '../../maps/input1.txt'
     with open(filename, 'r') as f:
         input_string = f.read()
         

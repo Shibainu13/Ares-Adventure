@@ -1,19 +1,20 @@
-from . import _utils
 import os
 import time
 import tracemalloc
+from . import _utils
+# import _utils
 
 def bfs(grid, ares_pos, stones, switches, stone_weights):
     tracemalloc.start()
     start_time = time.time()
 
-    queue = [(ares_pos, stones, '', 0)]
+    queue = [(ares_pos, stones, '', 0, [])]
     
     visited = dict()
     visited[(ares_pos[0], ares_pos[1], tuple(stones))] = 0
     nodes_generated = 0
     while queue:
-        (ares_x, ares_y), stones, path, total_cost = queue.pop(0)
+        (ares_x, ares_y), stones, path, total_cost, weight_track = queue.pop(0)
 
         if _utils.all_stones_on_switches(stones, switches):
             end_time = time.time()
@@ -26,7 +27,8 @@ def bfs(grid, ares_pos, stones, switches, stone_weights):
                 'nodes': nodes_generated,
                 'time_ms': "{:.2f}".format(1000 * (end_time - start_time)),
                 'memory_mb': "{:.2f}".format(peak_memory / 1048576),
-                'path': path
+                'path': path,
+                'weight_track': weight_track
             }
       
 
@@ -56,12 +58,12 @@ def bfs(grid, ares_pos, stones, switches, stone_weights):
 
             if new_state not in visited or new_total_cost < visited[new_state]:
                 visited[new_state] = new_total_cost
-                queue.append(((new_x, new_y), new_stones, path + move, new_total_cost))
+                queue.append(((new_x, new_y), new_stones, path + move, new_total_cost, weight_track + [new_total_cost]))
                 nodes_generated += 1
 
     return None
 
-input_file = os.path.join('..', '..', 'maps', 'sample-input.txt')
+input_file = os.path.join('..', '..', 'maps', 'input1.txt')
 
 def main(input_file=input_file):
     with open(input_file, 'r') as file:

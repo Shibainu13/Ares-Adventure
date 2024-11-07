@@ -167,6 +167,7 @@ class SokobanVisualizer(QWidget):
         self.setFixedSize(max(map_width * 40 + 100, 600), map_height * 40 + 150)
     
     def start_visualization(self):        
+        self.reset_map()
         algorithm = self.algorithm_dropdown.currentText()
         result = self.run_algorithm(algorithm)
         
@@ -175,11 +176,11 @@ class SokobanVisualizer(QWidget):
             return
         
         self.steps = 0
-        self.total_weight = result['weight']
+        self.total_weight = result['weight_track']
         self.path = result['path']
         
         self.steps_label.setText(f"Steps: {self.steps}")
-        self.cost_label.setText(f"Total Cost: {self.total_weight}")
+        self.cost_label.setText(f"Total Cost: 0")
         
         self.path_index = 0
         self.timer.start(150)
@@ -207,7 +208,7 @@ class SokobanVisualizer(QWidget):
         
         # Update the stats after each step
         self.steps_label.setText(f'Steps: {self.steps}')
-        self.cost_label.setText(f'Total Cost: {self.total_weight}')
+        self.cost_label.setText(f'Total Cost: {self.total_weight[self.steps - 1]}')
         
     def execute_move(self, move):
         # Define movement deltas

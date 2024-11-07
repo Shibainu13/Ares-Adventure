@@ -1,21 +1,22 @@
-from . import _utils
 import os
 import tracemalloc
 import time
 import heapq
+from . import _utils
+# import _utils
 
 def ucs(grid, ares_pos, stones, switches, stone_weights):
     tracemalloc.start()
     start_time = time.time()
 
-    priority_queue = [(0, ares_pos, stones, '')]
+    priority_queue = [(0, ares_pos, stones, '', [])]
 
     visited = dict()
     visited[(ares_pos[0], ares_pos[1], tuple(stones))] = 0
     node_generated = 0
 
     while priority_queue:
-        total_cost, (ares_x, ares_y), stones, path = heapq.heappop(priority_queue)
+        total_cost, (ares_x, ares_y), stones, path, weight_track = heapq.heappop(priority_queue)
 
         if _utils.all_stones_on_switches(stones, switches):
             end_time = time.time()
@@ -28,7 +29,8 @@ def ucs(grid, ares_pos, stones, switches, stone_weights):
                 'nodes': node_generated,
                 'time_ms': "{:.2f}".format(1000 * (end_time - start_time)),
                 'memory_mb': "{:.2f}".format(peak_memory / 1048576),
-                'path': path
+                'path': path,
+                'weight_track': weight_track
             }
 
         for move, (dx, dy) in _utils.DIRECTIONS.items():
@@ -57,12 +59,12 @@ def ucs(grid, ares_pos, stones, switches, stone_weights):
 
             if new_state not in visited or new_total_cost < visited[new_state]:
                 visited[new_state] = new_total_cost
-                heapq.heappush(priority_queue, (new_total_cost, (new_x, new_y), new_stones, path + move))
+                heapq.heappush(priority_queue, (new_total_cost, (new_x, new_y), new_stones, path + move, weight_track + [new_total_cost]))
                 node_generated += 1
 
     return None
 
-input_file = os.path.join('..', '..', 'maps', 'sample-input.txt')
+input_file = os.path.join('..', '..', 'maps', 'input1.txt')
 
 def main(input_file=input_file):
     with open(input_file, 'r') as file:
