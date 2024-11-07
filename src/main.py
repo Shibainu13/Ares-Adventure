@@ -59,7 +59,7 @@ class SokobanVisualizer(QWidget):
         
         # Grid Layout for Map
         self.grid_layout = QGridLayout()
-        self.grid_layout.setSpacing(1)
+        # self.grid_layout.setSpacing(1)
         self.map_container = QWidget()
         self.map_container.setLayout(self.grid_layout)
         main_layout.addWidget(self.map_container, alignment=Qt.AlignCenter)
