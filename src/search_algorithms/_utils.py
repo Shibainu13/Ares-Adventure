@@ -58,17 +58,3 @@ def all_stones_on_switches(stones: list[tuple[int, int]], switches: list[tuple[i
         bool: whether all stones are on switches
     """
     return all(stone in switches for stone in stones)
-
-def listMaps():
-    """List of all maps in the maps folder
-
-    Returns:
-        list[str]: list of all map names
-    """
-    list_Map=[]
-    list_Map.append('Map1')
-    list_Map.append('Map2')
-    list_Map.append('Map3')
-    list_Map.append('Map4')
-    list_Map.append('Map5')
-    return list_Map

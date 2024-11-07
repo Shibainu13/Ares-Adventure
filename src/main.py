@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QComboBox, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
 )
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QTimer
 import search_algorithms._utils as _utils
 import search_algorithms.bfs as BFS
@@ -23,6 +24,7 @@ class SokobanVisualizer(QWidget):
     def initUI(self):
         # Set Window Title
         self.setWindowTitle("Ares' Adventure")
+        self.setWindowIcon(QIcon('../asset/ares.png'))
         
         # Main Layout
         main_layout = QVBoxLayout()
@@ -248,8 +250,7 @@ class SokobanVisualizer(QWidget):
                 cell.setStyleSheet("background-color: yellow; border: 1px solid black;")  # Stone
         else:
             cell.setStyleSheet("background-color: white; border: 1px solid black;")  # Blank cell
-
-    
+ 
     def reset_map(self):
         # Stop any ongoing visualization if running
         if self.timer.isActive():
