@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QComboBox, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
 )
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import (QIcon, QPixmap, QPainter)
 from PyQt5.QtCore import Qt, QTimer
 import search_algorithms._utils as _utils
 import search_algorithms.bfs as BFS
@@ -76,6 +76,9 @@ class SokobanVisualizer(QWidget):
         
         # Add bottom layout to main layout
         main_layout.addLayout(bottom_layout)
+
+        # Load assets
+        self.load_assets()
         
         # Set Main Layout
         self.setLayout(main_layout)
@@ -87,6 +90,21 @@ class SokobanVisualizer(QWidget):
         # Load Initial Map
         self.load_map()
     
+    def load_assets(self):
+        self.assets = {}
+        player_assets = QPixmap(40, 40)
+        player_assets.fill(Qt.transparent)
+        painter = QPainter(player_assets)
+        painter.drawPixmap(0, 0, QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio))
+        painter.drawPixmap(0, 0, QPixmap('../asset/ares.png').scaled(40, 40, Qt.KeepAspectRatio))
+        painter.end()
+        self.assets['player'] = player_assets
+        self.assets['invalid_cell'] = QPixmap('../asset/blank.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['wall'] = QPixmap('../asset/brick.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['blank'] = QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['switch'] = QPixmap('../asset/switch.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['stone'] = QPixmap('../asset/stone.png').scaled(40, 40, Qt.KeepAspectRatio)
+
     def load_map(self):
         # Stop any ongoing visualization if running
         if self.timer.isActive():
@@ -124,21 +142,21 @@ class SokobanVisualizer(QWidget):
                 if col < len(self.grid[row]):  # Check to avoid index error for uneven rows
                     cell_type = self.grid[row][col]
                     if cell_type == '#':
-                        cell.setStyleSheet("background-color: gray; border: 1px solid black;")  # Wall
+                        cell.setPixmap(self.assets['wall'])  # Wall
                     elif cell_type == '.':
-                        cell.setStyleSheet("background-color: lightgreen; border: 1px solid black;")  # Switch
+                        cell.setPixmap(self.assets['switch'])
                     elif cell_type == '@':
-                        cell.setStyleSheet("background-color: lightblue; border: 1px solid black;")  # Player
+                        cell.setPixmap(self.assets['player'])
                     elif cell_type == '+':
-                        cell.setStyleSheet("background-color: lightblue; border: 1px solid black;")  # Player on Switch
+                        cell.setPixmap(self.assets['player'])
                     elif cell_type == '$':
-                        cell.setStyleSheet("background-color: yellow; border: 1px solid black;")  # Stone
+                        cell.setPixmap(self.assets['stone'])
                     elif cell_type == '*':
-                        cell.setStyleSheet("background-color: orange; border: 1px solid black;")  # Stone on Switch
+                        cell.setPixmap(self.assets['stone'])
                     else:
-                        cell.setStyleSheet("background-color: white; border: 1px solid black;")  # Blank cell
+                        cell.setPixmap(self.assets['blank'])
                 else:
-                    cell.setStyleSheet("background-color: white; border: 1px solid black;")   # Fill extra cells as blank
+                    cell.setPixmap(self.assets['invalid_cell'])
                 
                 # Add cell to grid layout
                 self.grid_layout.addWidget(cell, row, col)
@@ -238,18 +256,18 @@ class SokobanVisualizer(QWidget):
         
         # Determine the cell's style based on its contents
         if self.grid[row][col] == '#':
-            cell.setStyleSheet("background-color: gray; border: 1px solid black;")  # Wall
+            cell.setPixmap(self.assets['wall'])  # Wall
         elif self.grid[row][col] == '.':
-            cell.setStyleSheet("background-color: lightgreen; border: 1px solid black;")  # Switch
+            cell.setPixmap(self.assets['switch'])
         elif player:
-            cell.setStyleSheet("background-color: lightblue; border: 1px solid black;")  # Player
+            cell.setPixmap(self.assets['player'])
         elif stone:
             if self.grid[row][col] == '*':
-                cell.setStyleSheet("background-color: orange; border: 1px solid black;")  # Stone on Switch
+                cell.setPixmap(self.assets['stone'])
             else:
-                cell.setStyleSheet("background-color: yellow; border: 1px solid black;")  # Stone
+                cell.setPixmap(self.assets['stone'])
         else:
-            cell.setStyleSheet("background-color: white; border: 1px solid black;")  # Blank cell
+            cell.setPixmap(self.assets['blank'])
  
     def reset_map(self):
         # Stop any ongoing visualization if running
