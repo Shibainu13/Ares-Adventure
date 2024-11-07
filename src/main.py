@@ -4,13 +4,43 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QComboBox, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
 )
-from PyQt5.QtGui import (QIcon, QPixmap, QPainter, QColor)
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import (QIcon, QPixmap, QPainter, QColor, QMovie)
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
 import search_algorithms._utils as _utils
 import search_algorithms.bfs as BFS
 import search_algorithms.dfs as DFS
 import search_algorithms.ucs as UCS
 import search_algorithms.a_star as ASTAR
+from collections import deque
+
+class AlgorithmThread(QThread):
+    finished = pyqtSignal(object)
+
+    def __init__(self, algorithm, grid, ares_pos, stones, switches, stone_weights):
+        super().__init__()
+        self.algorithm = algorithm
+        self.grid = grid
+        self.ares_pos = ares_pos
+        self.stones = stones
+        self.switches = switches
+        self.stone_weights = stone_weights
+
+    def run(self):
+        # Sleep for 1ms to allow the UI to update
+        QThread.sleep(1)
+        result = self.run_algorithm(self.algorithm)
+        self.finished.emit((result, self.algorithm))
+
+    def run_algorithm(self, algorithm):
+        if algorithm == 'BFS':
+            return BFS.bfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'DFS':
+            return DFS.dfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'UCS':
+            return UCS.ucs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        elif algorithm == 'A*':
+            return ASTAR.a_star(self.grid, self.ares_pos, self.stones, self.stone_weights, self.switches)
+        return None
 
 class SokobanVisualizer(QWidget):
     def __init__(self):
@@ -48,8 +78,18 @@ class SokobanVisualizer(QWidget):
         # Info Display (Steps & Cost)
         self.steps_label = QLabel('Steps: 0')
         self.cost_label = QLabel('Total Cost: 0')
+
+        # Loading Animation
+        self.loading_label = QLabel()
+        self.loading_movie = QMovie('../asset/loading.gif')
+        self.loading_label.setMovie(self.loading_movie)
+        self.loading_movie.setScaledSize(QSize(20, 20))
+
+        # Add components to top layout
         top_layout.addWidget(self.steps_label)
         top_layout.addWidget(self.cost_label)
+        top_layout.addWidget(self.loading_label)
+        self.loading_label.hide()
         self.steps_label.setFixedWidth(80)  # Increase width for steps label
         self.cost_label.setFixedWidth(100)  # Increase width for cost label
         
@@ -95,6 +135,7 @@ class SokobanVisualizer(QWidget):
     def load_assets(self):
         self.assets = {}
 
+        # Load player assets on blank background
         player_assets = QPixmap(40, 40)
         player_assets.fill(Qt.transparent)
         painter = QPainter(player_assets)
@@ -103,14 +144,17 @@ class SokobanVisualizer(QWidget):
         painter.end()
         self.assets['player'] = player_assets
 
+        # Load other assets
         self.assets['invalid_cell'] = QPixmap('../asset/blank.png').scaled(40, 40, Qt.KeepAspectRatio)
         self.assets['wall'] = QPixmap('../asset/brick.png').scaled(40, 40, Qt.KeepAspectRatio)
         self.assets['blank'] = QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio)
         self.assets['switch'] = QPixmap('../asset/switch.png').scaled(40, 40, Qt.KeepAspectRatio)
 
+        # Load stone assets
         original_stone = QPixmap('../asset/stone.png').scaled(40, 40, Qt.KeepAspectRatio)
         self.assets['stone'] = original_stone
 
+        # Load stone on switch assets
         stone_on_switch = QPixmap(40, 40)
         stone_on_switch.fill(Qt.transparent)
         painter = QPainter(stone_on_switch)
@@ -125,6 +169,7 @@ class SokobanVisualizer(QWidget):
         # Stop any ongoing visualization if running
         if self.timer.isActive():
             self.timer.stop()
+            self.reset_map()
             
         # Reset status texts
         self.steps_label.setText('Steps: 0')
@@ -145,9 +190,11 @@ class SokobanVisualizer(QWidget):
             if widget_to_remove is not None:
                 widget_to_remove.setParent(None)
         
-        # Setup map dimensions
+        # Setup map dimensions, fill empty cells with ' ' and mark inside/outside walls
         map_height = len(self.grid)
         map_width = max(len(row) for row in self.grid)
+        self.grid = [row + [' '] * (map_width - len(row)) for row in self.grid]
+        self.mark_inside_outside_walls(map_height, map_width)
         
         # Load textures based on cell type
         for row in range(map_height):
@@ -155,22 +202,21 @@ class SokobanVisualizer(QWidget):
                 cell = QLabel()
                 cell.setFixedSize(40, 40)
                 
-                if col < len(self.grid[row]):  # Check to avoid index error for uneven rows
-                    cell_type = self.grid[row][col]
-                    if cell_type == '#':
-                        cell.setPixmap(self.assets['wall'])  # Wall
-                    elif cell_type == '.':
-                        cell.setPixmap(self.assets['switch']) # Switch
-                    elif cell_type == '@':
-                        cell.setPixmap(self.assets['player']) # Player
-                    elif cell_type == '+':
-                        cell.setPixmap(self.assets['player']) # Player on switch
-                    elif cell_type == '$':
-                        cell.setPixmap(self.assets['stone']) # Stone
-                    elif cell_type == '*':
-                        cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
-                    else:
-                        cell.setPixmap(self.assets['blank']) # Empty cell
+                cell_type = self.grid[row][col]
+                if cell_type == '#':
+                    cell.setPixmap(self.assets['wall'])  # Wall
+                elif cell_type == '.':
+                    cell.setPixmap(self.assets['switch']) # Switch
+                elif cell_type == '@':
+                    cell.setPixmap(self.assets['player']) # Player
+                elif cell_type == '+':
+                    cell.setPixmap(self.assets['player']) # Player on switch
+                elif cell_type == '$':
+                    cell.setPixmap(self.assets['stone']) # Stone
+                elif cell_type == '*':
+                    cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
+                elif cell_type == ' ':
+                    cell.setPixmap(self.assets['blank']) # Empty cell
                 else:
                     cell.setPixmap(self.assets['invalid_cell'])
                 
@@ -180,7 +226,44 @@ class SokobanVisualizer(QWidget):
         # Adjust window size based on map size
         self.setFixedSize(max(map_width * 40 + 100, 600), map_height * 40 + 150)
     
-    def start_visualization(self):        
+    def mark_inside_outside_walls(self, map_height, map_width):
+        visited = [[False for _ in range(map_width)] for _ in range(map_height)]
+
+        # Find pairs coordinates of border cells
+        def border_pairs():
+            result = []
+            for c in range(map_width):
+                result.append((0, c))
+                result.append((map_height - 1, c))
+            for r in range(1, map_height - 1):
+                result.append((r, 0))
+                result.append((r, map_width - 1))
+            return result
+        
+        # BFS to mark inside/outside walls
+        def bfs(start_x, start_y):
+            queue = deque([(start_x, start_y)])
+            visited[start_x][start_y] = True
+
+            while queue:
+                x, y = queue.popleft()
+                self.grid[x][y] = 'o'
+                for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < map_height and 0 <= ny < map_width and not visited[nx][ny] and self.grid[nx][ny] == ' ':
+                        visited[nx][ny] = True
+                        queue.append((nx, ny))
+
+        # Mark outside walls
+        for r, c in border_pairs():
+            if not visited[r][c] and self.grid[r][c] == ' ':
+                bfs(r, c)
+
+    def start_visualization(self):
+        # Show loading animation
+        self.loading_label.show()
+        self.loading_movie.start()
+
         # Act as a pause button if is_running
         if self.is_running and self.timer.isActive():
             self.timer.stop()
@@ -193,8 +276,19 @@ class SokobanVisualizer(QWidget):
         
         self.reset_map()
         algorithm = self.algorithm_dropdown.currentText()
-        result = self.run_algorithm(algorithm)
-        
+
+        # Run the selected algorithm in a separate thread
+        self.thread = AlgorithmThread(algorithm, self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
+        self.thread.finished.connect(self.on_algorithm_finished)
+        self.thread.start()
+
+    def on_algorithm_finished(self, result):
+        # Hide loading animation
+        self.loading_label.hide()
+        self.loading_movie.stop()
+
+        result, algorithm = result
+
         if result is None:
             QMessageBox.information(self, 'Error', 'No solution found.')
             return
@@ -215,17 +309,6 @@ class SokobanVisualizer(QWidget):
         self.timer.start(150)
         self.start_button.setText('Pause')
         self.is_running = True
-        
-    def run_algorithm(self, algorithm):
-        if algorithm == 'BFS':
-            return BFS.bfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
-        elif algorithm == 'DFS':
-            return DFS.dfs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
-        elif algorithm == 'UCS':
-            return UCS.ucs(self.grid, self.ares_pos, self.stones, self.switches, self.stone_weights)
-        elif algorithm == 'A*':
-            return ASTAR.a_star(self.grid, self.ares_pos, self.stones, self.stone_weights, self.switches)
-        return None
         
     def next_step(self):
         if self.path_index >= len(self.path):
@@ -300,8 +383,10 @@ class SokobanVisualizer(QWidget):
                 cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
             else:
                 cell.setPixmap(self.assets['stone']) # Stone
-        else:
+        elif self.grid[row][col] == ' ':
             cell.setPixmap(self.assets['blank']) # Empty cell
+        else:
+            cell.setPixmap(self.assets['invalid_cell']) # Invalid cell
  
     def reset_map(self):
         # Stop any ongoing visualization if running
@@ -319,9 +404,12 @@ class SokobanVisualizer(QWidget):
         # QMessageBox.information(self, 'Reset', 'Map has been reset.')
 
     def save_result_to_file(self, file, result, algorithm):
+        # Check if the algorithm result is already saved in the file
         file.seek(0)
         if any(algorithm in line for line in file):
             return
+
+        # Save the algorithm result to the file
         output = (
             f"{algorithm}\n"
             f"Steps: {result['steps']}, "
