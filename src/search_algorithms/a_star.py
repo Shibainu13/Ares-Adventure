@@ -2,7 +2,6 @@ import time
 import heapq
 import tracemalloc
 from . import _utils
-# import _utils
 
 def a_star(grid, ares, stones, stone_weights, switches):
     start_time = time.time()
@@ -112,4 +111,3 @@ def corner_deadlock(grid, stone, stones, switches):
     right_block = grid[stone_x + 1][stone_y] == '#' or ((stone_x + 1, stone_y) in stones and (stone_x + 1, stone_y) not in switches)
     
     return (up_block or down_block) and (left_block or right_block) and not on_switch
-

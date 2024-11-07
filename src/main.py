@@ -1,10 +1,6 @@
-
 import sys
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QComboBox, QPushButton, QLabel,
-    QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
-)
-from PyQt5.QtGui import (QIcon, QPixmap, QPainter, QColor, QMovie)
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
+from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QMovie
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
 import search_algorithms._utils as _utils
 import search_algorithms.bfs as BFS
@@ -152,16 +148,27 @@ class SokobanVisualizer(QWidget):
 
         # Load stone assets
         original_stone = QPixmap('../asset/stone.png').scaled(40, 40, Qt.KeepAspectRatio)
-        self.assets['stone'] = original_stone
+        stone_assets = QPixmap(40, 40)
+        stone_assets.fill(Qt.transparent)
+        painter = QPainter(stone_assets)
+        painter.drawPixmap(0, 0, QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio))
+        painter.drawPixmap(0, 0, original_stone)
+        painter.end()
+        self.assets['stone'] = stone_assets
 
         # Load stone on switch assets
         stone_on_switch = QPixmap(40, 40)
         stone_on_switch.fill(Qt.transparent)
-        painter = QPainter(stone_on_switch)
-        painter.drawPixmap(0, 0, original_stone)
-        tint_color = QColor(255, 255, 0)
+        painter = QPainter(original_stone)
+        tint_color = QColor(255, 255, 0) # Yellow tint
         tint_color.setAlpha(100)
-        painter.fillRect(stone_on_switch.rect(), tint_color)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+        painter.fillRect(original_stone.rect(), tint_color)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        painter.end()
+        painter = QPainter(stone_on_switch)
+        painter.drawPixmap(0, 0, QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio))
+        painter.drawPixmap(0, 0, original_stone)
         painter.end()
         self.assets['stone_on_switch'] = stone_on_switch
 
@@ -207,10 +214,8 @@ class SokobanVisualizer(QWidget):
                     cell.setPixmap(self.assets['wall'])  # Wall
                 elif cell_type == '.':
                     cell.setPixmap(self.assets['switch']) # Switch
-                elif cell_type == '@':
+                elif cell_type == '@' or cell_type == '+':
                     cell.setPixmap(self.assets['player']) # Player
-                elif cell_type == '+':
-                    cell.setPixmap(self.assets['player']) # Player on switch
                 elif cell_type == '$':
                     cell.setPixmap(self.assets['stone']) # Stone
                 elif cell_type == '*':
@@ -218,7 +223,7 @@ class SokobanVisualizer(QWidget):
                 elif cell_type == ' ':
                     cell.setPixmap(self.assets['blank']) # Empty cell
                 else:
-                    cell.setPixmap(self.assets['invalid_cell'])
+                    cell.setPixmap(self.assets['invalid_cell']) # Invalid cell
                 
                 # Add cell to grid layout
                 self.grid_layout.addWidget(cell, row, col)
@@ -306,7 +311,7 @@ class SokobanVisualizer(QWidget):
         self.cost_label.setText(f"Total Cost: 0")
         
         self.path_index = 0
-        self.timer.start(150)
+        self.timer.start(min(150, 5000 // result['steps']))
         self.start_button.setText('Pause')
         self.is_running = True
         
@@ -372,9 +377,10 @@ class SokobanVisualizer(QWidget):
         cell = self.grid_layout.itemAtPosition(row, col).widget()
         
         # Determine the cell's style based on its contents
-        if self.grid[row][col] == '#':
+        cell_type = self.grid[row][col]
+        if cell_type == '#':
             cell.setPixmap(self.assets['wall'])  # Wall
-        elif self.grid[row][col] == '.':
+        elif cell_type == '.':
             cell.setPixmap(self.assets['switch']) # Switch
         elif player:
             cell.setPixmap(self.assets['player']) # Player
@@ -383,7 +389,7 @@ class SokobanVisualizer(QWidget):
                 cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
             else:
                 cell.setPixmap(self.assets['stone']) # Stone
-        elif self.grid[row][col] == ' ':
+        elif cell_type == ' ':
             cell.setPixmap(self.assets['blank']) # Empty cell
         else:
             cell.setPixmap(self.assets['invalid_cell']) # Invalid cell
@@ -392,6 +398,7 @@ class SokobanVisualizer(QWidget):
         # Stop any ongoing visualization if running
         if self.timer.isActive():
             self.timer.stop()
+
         # Reset the visualization (clear the steps, cost, and reset map)
         self.is_running = False
         self.start_button.setText('Start')
@@ -401,7 +408,6 @@ class SokobanVisualizer(QWidget):
         self.steps = 0
         self.total_weight = 0
         self.load_map()
-        # QMessageBox.information(self, 'Reset', 'Map has been reset.')
 
     def save_result_to_file(self, file, result, algorithm):
         # Check if the algorithm result is already saved in the file

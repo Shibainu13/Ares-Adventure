@@ -2,7 +2,6 @@ import os
 import time
 import tracemalloc
 from . import _utils
-# import _utils
 
 def bfs(grid, ares_pos, stones, switches, stone_weights):
     tracemalloc.start()
