@@ -265,10 +265,6 @@ class SokobanVisualizer(QWidget):
                 bfs(r, c)
 
     def start_visualization(self):
-        # Show loading animation
-        self.loading_label.show()
-        self.loading_movie.start()
-
         # Act as a pause button if is_running
         if self.is_running and self.timer.isActive():
             self.timer.stop()
@@ -278,6 +274,9 @@ class SokobanVisualizer(QWidget):
             self.timer.start(150)
             self.start_button.setText('Pause')
             return
+          
+        self.loading_label.show()
+        self.loading_movie.start()
         
         self.reset_map()
         algorithm = self.algorithm_dropdown.currentText()
