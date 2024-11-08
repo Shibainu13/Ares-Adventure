@@ -297,7 +297,7 @@ class SokobanVisualizer(QWidget):
             QMessageBox.information(self, 'Error', 'No solution found.')
             return
         
-        save_file = f'../output/output{self.map_dropdown.currentIndex() + 1:02}.txt'
+        save_file = f'../output/output-{self.map_dropdown.currentIndex() + 1:02}.txt'
         with open(save_file, 'a+') as file:
             self.save_result_to_file(file, result, algorithm)
             file.close()
