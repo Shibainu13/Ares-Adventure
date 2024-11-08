@@ -98,7 +98,7 @@ def heuristic_weighted_manhattan_distance(ares_pos, stones, switches, stone_weig
         # Compute the heuristic component for this stone
         total_heuristic += stone_to_switch_dist * (stone_weights[i] + 1)
     
-    return total_heuristic + min_ares_to_stone_dist
+    return total_heuristic
 
 
 def corner_deadlock(grid, stone, stones, switches):
