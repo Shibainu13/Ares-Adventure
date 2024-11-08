@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QGridLayout, QMessageBox
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QMovie
+from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QMovie, QFont
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal, QSize
 import search_algorithms._utils as _utils
 import search_algorithms.bfs as BFS
@@ -8,6 +8,13 @@ import search_algorithms.dfs as DFS
 import search_algorithms.ucs as UCS
 import search_algorithms.a_star as ASTAR
 from collections import deque
+
+def isInterger(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 class AlgorithmThread(QThread):
     finished = pyqtSignal(object)
@@ -114,9 +121,6 @@ class SokobanVisualizer(QWidget):
         
         # Add bottom layout to main layout
         main_layout.addLayout(bottom_layout)
-
-        # Load assets
-        self.load_assets()
         
         # Set Main Layout
         self.setLayout(main_layout)
@@ -130,6 +134,7 @@ class SokobanVisualizer(QWidget):
     
     def load_assets(self):
         self.assets = {}
+        font = QFont('../asset/JetBrainsMono-Regular.ttf', 16)
 
         # Load player assets on blank background
         player_assets = QPixmap(40, 40)
@@ -138,13 +143,14 @@ class SokobanVisualizer(QWidget):
         painter.drawPixmap(0, 0, QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio))
         painter.drawPixmap(0, 0, QPixmap('../asset/ares.png').scaled(40, 40, Qt.KeepAspectRatio))
         painter.end()
-        self.assets['player'] = player_assets
+        self.assets['@'] = player_assets
+        self.assets['+'] = player_assets
 
         # Load other assets
-        self.assets['invalid_cell'] = QPixmap('../asset/blank.png').scaled(40, 40, Qt.KeepAspectRatio)
-        self.assets['wall'] = QPixmap('../asset/brick.png').scaled(40, 40, Qt.KeepAspectRatio)
-        self.assets['blank'] = QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio)
-        self.assets['switch'] = QPixmap('../asset/switch.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['o'] = QPixmap('../asset/blank.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['#'] = QPixmap('../asset/brick.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets[' '] = QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio)
+        self.assets['.'] = QPixmap('../asset/switch.png').scaled(40, 40, Qt.KeepAspectRatio)
 
         # Load stone assets
         original_stone = QPixmap('../asset/stone.png').scaled(40, 40, Qt.KeepAspectRatio)
@@ -154,7 +160,21 @@ class SokobanVisualizer(QWidget):
         painter.drawPixmap(0, 0, QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio))
         painter.drawPixmap(0, 0, original_stone)
         painter.end()
-        self.assets['stone'] = stone_assets
+        # self.assets['$'] = stone_assets
+
+        for weight in self.stone_weights:
+            weight_str = str(weight)
+            pixmap = QPixmap(40, 40)
+            pixmap.fill(Qt.transparent)
+            painter = QPainter(pixmap)
+            painter.drawPixmap(0, 0, stone_assets)
+            painter.setFont(font)
+            painter.setRenderHint(QPainter.TextAntialiasing)
+            painter.setPen(QColor(255, 255, 255))
+            text_rect = painter.boundingRect(pixmap.rect(), Qt.AlignRight, weight_str)
+            painter.drawText((40 - text_rect.width()) // 2, (40 + text_rect.height()) // 2, weight_str)
+            painter.end()
+            self.assets[weight_str] = pixmap
 
         # Load stone on switch assets
         stone_on_switch = QPixmap(40, 40)
@@ -170,7 +190,22 @@ class SokobanVisualizer(QWidget):
         painter.drawPixmap(0, 0, QPixmap('../asset/real_blank.png').scaled(40, 40, Qt.KeepAspectRatio))
         painter.drawPixmap(0, 0, original_stone)
         painter.end()
-        self.assets['stone_on_switch'] = stone_on_switch
+        # self.assets['*'] = stone_on_switch
+
+        for weight in self.stone_weights:
+            weight_str = str(weight)
+            real_str = str(-weight)
+            pixmap = QPixmap(40, 40)
+            pixmap.fill(Qt.transparent)
+            painter = QPainter(pixmap)
+            painter.drawPixmap(0, 0, stone_on_switch)
+            painter.setFont(font)
+            painter.setRenderHint(QPainter.TextAntialiasing)
+            painter.setPen(QColor(255, 255, 255))
+            text_rect = painter.boundingRect(pixmap.rect(), Qt.AlignRight, weight_str)
+            painter.drawText((40 - text_rect.width()) // 2, (40 + text_rect.height()) // 2, weight_str)
+            painter.end()
+            self.assets[real_str] = pixmap
 
     def load_map(self):
         # Stop any ongoing visualization if running
@@ -189,7 +224,10 @@ class SokobanVisualizer(QWidget):
         with open(map_file, 'r') as f:
             input_data = f.read()
         self.stone_weights, self.grid = _utils.parse_input(input_data)
-        self.ares_pos, self.stones, self.switches = _utils.find_positions(self.grid)
+        self.ares_pos, self.stones, self.switches = _utils.find_positions(self.grid, self.stone_weights)
+
+        # Load assets
+        self.load_assets()
         
         # Clear the grid layout
         for i in reversed(range(self.grid_layout.count())):
@@ -210,20 +248,7 @@ class SokobanVisualizer(QWidget):
                 cell.setFixedSize(40, 40)
                 
                 cell_type = self.grid[row][col]
-                if cell_type == '#':
-                    cell.setPixmap(self.assets['wall'])  # Wall
-                elif cell_type == '.':
-                    cell.setPixmap(self.assets['switch']) # Switch
-                elif cell_type == '@' or cell_type == '+':
-                    cell.setPixmap(self.assets['player']) # Player
-                elif cell_type == '$':
-                    cell.setPixmap(self.assets['stone']) # Stone
-                elif cell_type == '*':
-                    cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
-                elif cell_type == ' ':
-                    cell.setPixmap(self.assets['blank']) # Empty cell
-                else:
-                    cell.setPixmap(self.assets['invalid_cell']) # Invalid cell
+                cell.setPixmap(self.assets[cell_type])
                 
                 # Add cell to grid layout
                 self.grid_layout.addWidget(cell, row, col)
@@ -275,6 +300,10 @@ class SokobanVisualizer(QWidget):
             self.start_button.setText('Pause')
             return
           
+        self.loading_label.show()
+        self.loading_movie.start()
+        
+        # Show loading animation
         self.loading_label.show()
         self.loading_movie.start()
         
@@ -354,7 +383,7 @@ class SokobanVisualizer(QWidget):
             stone_col = new_col + delta_col
             
             # Move the stone to the new position
-            self.grid[stone_row][stone_col] = '*' if self.grid[stone_row][stone_col] == '.' else '$'
+            self.grid[stone_row][stone_col] = self.grid[new_row][new_col] if self.grid[stone_row][stone_col] == ' ' else str(-int(self.grid[new_row][new_col]))
             self.grid[new_row][new_col] = '+' if self.grid[new_row][new_col] == '.' else '@'
             
             # Update UI for the stone's new position
@@ -377,21 +406,12 @@ class SokobanVisualizer(QWidget):
         
         # Determine the cell's style based on its contents
         cell_type = self.grid[row][col]
-        if cell_type == '#':
-            cell.setPixmap(self.assets['wall'])  # Wall
-        elif cell_type == '.':
-            cell.setPixmap(self.assets['switch']) # Switch
+        if cell_type == '#' or cell_type == '.' or cell_type == 'o' or cell_type == ' ':  # Wall, Switch, Blank, Inside Wall
+            cell.setPixmap(self.assets[cell_type])
         elif player:
-            cell.setPixmap(self.assets['player']) # Player
+            cell.setPixmap(self.assets['@']) # Player
         elif stone:
-            if self.grid[row][col] == '*':
-                cell.setPixmap(self.assets['stone_on_switch']) # Stone on switch
-            else:
-                cell.setPixmap(self.assets['stone']) # Stone
-        elif cell_type == ' ':
-            cell.setPixmap(self.assets['blank']) # Empty cell
-        else:
-            cell.setPixmap(self.assets['invalid_cell']) # Invalid cell
+            cell.setPixmap(self.assets[cell_type])
  
     def reset_map(self):
         # Stop any ongoing visualization if running

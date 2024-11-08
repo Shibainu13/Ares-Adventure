@@ -24,7 +24,7 @@ def parse_input(input_string: str):
     return stone_weights, grid
 
 
-def find_positions(grid: list[list[str]]):
+def find_positions(grid: list[list[str]], stone_weights: list[int]):
     """Find initial positions of Ares, stones, and switches
 
     Args:
@@ -36,12 +36,15 @@ def find_positions(grid: list[list[str]]):
     ares_pos = None
     stones = []
     switches = []
+    cnt = 0
     for i, row in enumerate(grid):
         for j, cell in enumerate(row):
             if cell == '@' or cell == '+':
                 ares_pos = (i, j)
             if cell == '$' or cell == '*':
                 stones.append((i, j))
+                grid[i][j] = str(stone_weights[cnt]) if cell == '$' else str(-stone_weights[cnt])
+                cnt += 1
             if cell == '.' or cell == '+' or cell == '*':
                 switches.append((i, j))
     return ares_pos, stones, switches
