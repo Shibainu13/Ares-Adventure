@@ -307,6 +307,10 @@ class SokobanVisualizer(QWidget):
         self.loading_label.show()
         self.loading_movie.start()
         
+        # Show loading animation
+        self.loading_label.show()
+        self.loading_movie.start()
+        
         self.reset_map()
         algorithm = self.algorithm_dropdown.currentText()
 
