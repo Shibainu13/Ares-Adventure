@@ -9,13 +9,6 @@ import search_algorithms.ucs as UCS
 import search_algorithms.a_star as ASTAR
 from collections import deque
 
-def isInterger(s):
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
 class AlgorithmThread(QThread):
     finished = pyqtSignal(object)
 
