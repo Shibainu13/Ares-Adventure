@@ -311,6 +311,10 @@ class SokobanVisualizer(QWidget):
         self.loading_label.show()
         self.loading_movie.start()
         
+        # Show loading animation
+        self.loading_label.show()
+        self.loading_movie.start()
+        
         self.reset_map()
         algorithm = self.algorithm_dropdown.currentText()
 
@@ -387,7 +391,7 @@ class SokobanVisualizer(QWidget):
             stone_col = new_col + delta_col
             
             # Move the stone to the new position
-            self.grid[stone_row][stone_col] = self.grid[new_row][new_col] if self.grid[stone_row][stone_col] == ' ' else str(-int(self.grid[new_row][new_col]))
+            self.grid[stone_row][stone_col] = str(abs(int(self.grid[new_row][new_col]))) if self.grid[stone_row][stone_col] == ' ' else str(-abs(int(self.grid[new_row][new_col])))
             self.grid[new_row][new_col] = '+' if self.grid[new_row][new_col] == '.' else '@'
             
             # Update UI for the stone's new position
@@ -415,7 +419,7 @@ class SokobanVisualizer(QWidget):
         elif player:
             cell.setPixmap(self.assets['@']) # Player
         elif stone:
-            cell.setPixmap(self.assets[cell_type])
+            cell.setPixmap(self.assets[cell_type]) # Stone
  
     def reset_map(self):
         # Stop any ongoing visualization if running
